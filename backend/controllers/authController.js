@@ -4,7 +4,7 @@ import { authService } from "../services/authService.js";
 
 export const register = async (req,res,next)=>{
     try{
-    console.log("regestring in controller phase");
+    console.log("registering in controller phase");
     const {fullName,email,password,role,companyId} = req.body;
     if(!fullName || !email || !password || !role){
         return res.status(400).json({

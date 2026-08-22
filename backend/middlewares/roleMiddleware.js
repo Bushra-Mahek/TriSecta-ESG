@@ -1,16 +1,24 @@
+import jwt from "jsonwebtoken";
+import { userModel } from "../models/userModel.js";
 
-export const authorize = (...allowedRules)=>{
-    return (req,res,next) =>{
-        if(!req.user){
-            return res.status(401).json({message: "unauthorized"});
+export const authorize = (...allowedRoles) => {
+
+    return (req, res, next) => {
+
+        if (!req.user) {
+            return res.status(401).json({
+                message: "Authentication required"
+            });
         }
-        
-        if(!allowedRules.includes(req.user.role)){
+
+        if (!allowedRoles.includes(req.user.role)) {
             return res.status(403).json({
-                message: "Forbidden: You don't have permission to perform this action."
+                message: "Access denied"
             });
         }
 
         next();
     };
 };
+
+
