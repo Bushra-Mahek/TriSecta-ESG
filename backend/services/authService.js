@@ -14,24 +14,24 @@ export const authService = {
     },
     
     async loginUser(email, password) {
-    const result = await userModel.findUserByEmail(email);
+        const result = await userModel.findUserByEmail(email);
 
-    if (!result) {
-        throw new Error("User not found");
+        if (!result) {
+            throw new Error("User not found");
+        }
+
+        const valid = await bcrypt.compare(password, result.password_hash);
+
+        if (!valid) {
+            throw new Error("Invalid password");
+        }
+
+        const token = generateToken(result);
+
+        return {
+            user: result,
+            token
+        };
     }
-
-    const valid = await bcrypt.compare(password, result.password_hash);
-
-    if (!valid) {
-        throw new Error("Invalid password");
-    }
-
-    const token = generateToken(result);
-
-    return {
-        user: result,
-        token
-    };
-}
     
 }
