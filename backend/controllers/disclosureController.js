@@ -2,7 +2,7 @@ import { disclosureService } from "../services/disclosureService.js";
 
 export const createDisclosure = async (req, res, next) => {
     try {
-        const { reportingYear } = req.body;
+        const reportingYear = req.body.reportingYear;
 
         if (!reportingYear) {
             return res.status(400).json({
@@ -12,7 +12,7 @@ export const createDisclosure = async (req, res, next) => {
 
         const result = await disclosureService.createDisclosure(
             reportingYear,
-            req.user
+            req.user,req.ip
         );
 
         return res.status(201).json({
@@ -70,7 +70,7 @@ export const updateDisclosure = async (req, res, next) => {
         const result = await disclosureService.updateDisclosure(
             id,
             req.body,
-            req.user
+            req.user,req.ip
         );
 
         return res.status(200).json({
@@ -91,7 +91,7 @@ export const deleteDisclosure = async (req, res, next) => {
 
         await disclosureService.deleteDisclosure(
             id,
-            req.user
+            req.user,req.ip
         );
 
         return res.status(200).json({

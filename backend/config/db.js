@@ -1,5 +1,5 @@
 import pkg from "pg";
-import env from "dotenv"
+import env from "dotenv";
 
 const { Pool } = pkg;
 
@@ -13,11 +13,39 @@ export const db = new Pool({
     port: parseInt(process.env.DB_PORT || "5432"),
 });
 
-db.on('connect', () => {
-  console.log("Database connection pool initialized successfully");
+db.on("connect", () => {
+    console.log("Database connection pool initialized successfully");
 });
 
-db.on('error', (err) => {
-  console.error("Unexpected error on idle database client", err);
-  process.exit(-1);
+db.on("error", (err) => {
+    console.error("Unexpected error on idle database client", err);
+    process.exit(-1);
 });
+
+
+export async function transaction(callback) {
+
+    const client = await db.connect();
+
+    try {
+
+        await client.query("BEGIN");
+
+        const result = await callback(client);
+
+        await client.query("COMMIT");
+
+        return result;
+
+    } catch (error) {
+
+        await client.query("ROLLBACK");
+
+        throw error;
+
+    } finally {
+
+        client.release();
+
+    }
+}
