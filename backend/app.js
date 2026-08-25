@@ -4,6 +4,7 @@ import companyRoutes from "./routes/companyRoutes.js";
 import disclosureRoutes from "./routes/disclosureRoutes.js";
 import metricRoutes from "./routes/metricRoutes.js";
 import dataPointRoutes from "./routes/dataPointRoutes.js";
+import documentRoutes from "./routes/documentRoutes.js";
 
 
 import { errorHandler } from "./middlewares/errorMiddleware.js";
@@ -25,6 +26,10 @@ app.use("/api/companies",companyRoutes);
 app.use("/api/disclosures",disclosureRoutes);
 app.use("/api/metrics", metricRoutes);
 app.use("/api/data-points", dataPointRoutes);
+app.use(
+    "/api/documents",
+    documentRoutes
+);
 app.use(errorHandler);
 
 export default app;
