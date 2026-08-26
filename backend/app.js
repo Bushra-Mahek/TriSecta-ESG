@@ -7,7 +7,10 @@ import dataPointRoutes from "./routes/dataPointRoutes.js";
 import documentRoutes from "./routes/documentRoutes.js";
 
 
+
 import { errorHandler } from "./middlewares/errorMiddleware.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 console.log("🔥 APP.JS LOADED");

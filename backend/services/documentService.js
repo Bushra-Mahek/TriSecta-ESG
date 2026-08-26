@@ -4,25 +4,24 @@ import { auditLogModel } from "../models/auditLogModel.js";
 import { AppError } from "../middlewares/errorMiddleware.js";
 import { transaction } from "../config/db.js";
 
+import s3 from "../config/s3.js";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+
+import crypto from "crypto";
+
 export const documentService = {
 
-    async createDocument(
-        data,
-        user,
-        ipAddress
-    ) {
+    async createDocument(data, user, file, ipAddress) {
 
-        if (user.role !== "COMPANY_USER") {
+        if (!file) {
             throw new AppError(
-                "Access denied",
-                403
+                "Document file is required",
+                400
             );
         }
 
         const disclosure =
-            await disclosureModel.getDisclosure(
-                data.disclosureId
-            );
+            await disclosureModel.getDisclosure(data.disclosureId);
 
         if (!disclosure) {
             throw new AppError(
@@ -31,7 +30,9 @@ export const documentService = {
             );
         }
 
+        // Only the company owning the disclosure can upload
         if (
+            user.role !== "COMPANY_USER" ||
             disclosure.company_id !== user.company_id
         ) {
             throw new AppError(
@@ -40,6 +41,7 @@ export const documentService = {
             );
         }
 
+        // Documents can only be modified while draft
         if (disclosure.status !== "DRAFT") {
             throw new AppError(
                 "Documents can only be uploaded for draft disclosures",
@@ -47,26 +49,29 @@ export const documentService = {
             );
         }
 
-        if (
-            !data.fileName ||
-            !data.fileType ||
-            !data.fileUrl
-        ) {
-            throw new AppError(
-                "File name, file type and file URL are required",
-                400
-            );
-        }
+        const documentId = crypto.randomUUID();
+
+        const key =
+            `disclosures/${disclosure.id}/documents/${documentId}-${file.originalname}`;
+
+        await s3.send(
+            new PutObjectCommand({
+                Bucket: process.env.AWS_S3_BUCKET,
+                Key: key,
+                Body: file.buffer,
+                ContentType: file.mimetype
+            })
+        );
 
         return await transaction(async (client) => {
 
             const document =
                 await documentModel.createDocument(
-                    data.disclosureId,
+                    disclosure.id,
                     user.id,
-                    data.fileName,
-                    data.fileType,
-                    data.fileUrl,
+                    file.originalname,
+                    file.mimetype,
+                    key,
                     client
                 );
 
@@ -82,6 +87,7 @@ export const documentService = {
             return document;
         });
     },
+
 
 
     async getDocument(id, user) {
