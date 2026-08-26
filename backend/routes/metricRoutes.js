@@ -8,7 +8,8 @@ import {
     getMetric,
     getMetrics,
     updateMetric,
-    deactivateMetric
+    deactivateMetric,
+    activateMetric
 } from "../controllers/metricController.js";
 
 const router = express.Router();
@@ -44,6 +45,13 @@ router.patch(
     authenticate,
     authorize("ADMIN"),
     deactivateMetric
+);
+
+router.patch(
+    "/:id/activate",
+    authenticate,
+    authorize("ADMIN"),
+    activateMetric
 );
 
 export default router;

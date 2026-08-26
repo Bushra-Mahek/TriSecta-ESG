@@ -1,4 +1,6 @@
 import { disclosureModel } from "../models/disclosureModel.js";
+import { dataPointModel } from "../models/dataPointModel.js";
+import { documentModel } from "../models/documentModel.js";
 import { AppError } from "../middlewares/errorMiddleware.js";
 import {
     canTransition
@@ -402,6 +404,108 @@ async rejectDisclosure(id, user) {
 
         return updatedDisclosure;
     });
-}
+},
+
+async getDisclosureReview(id, user) {
+
+    const disclosure =
+        await disclosureModel.getDisclosure(id);
+
+    if (!disclosure) {
+        throw new AppError(
+            "Disclosure not found",
+            404
+        );
+    }
+
+    // Draft disclosures are private to the owning company
+    if (
+        disclosure.status === "DRAFT" &&
+        (
+            user.role !== "COMPANY_USER" ||
+            disclosure.company_id !== user.company_id
+        )
+    ) {
+        throw new AppError(
+            "Access denied",
+            403
+        );
+    }
+
+    // Company users can only see their own company's disclosure
+    if (
+        user.role === "COMPANY_USER" &&
+        disclosure.company_id !== user.company_id
+    ) {
+        throw new AppError(
+            "Access denied",
+            403
+        );
+    }
+
+    const dataPoints =
+        await dataPointModel.getDataPointsByDisclosure(id);
+
+    const documents =
+        await documentModel.getDocumentsByDisclosure(id);
+
+    return {
+        disclosure,
+        dataPoints,
+        documents
+    };
+},
+
+async getPendingReviews(user) {
+
+    if (user.role !== "AUDITOR") {
+        throw new AppError(
+            "Access denied",
+            403
+        );
+    }
+
+    return await disclosureModel.getPendingReviews();
+},
+
+async getDisclosureTimeline(id, user) {
+
+    const disclosure =
+        await disclosureModel.getDisclosure(id);
+
+    if (!disclosure) {
+        throw new AppError(
+            "Disclosure not found",
+            404
+        );
+    }
+
+    // Draft disclosures are private to owning company
+    if (
+        disclosure.status === "DRAFT" &&
+        (
+            user.role !== "COMPANY_USER" ||
+            disclosure.company_id !== user.company_id
+        )
+    ) {
+        throw new AppError(
+            "Access denied",
+            403
+        );
+    }
+
+    // Company users can only view their own disclosures
+    if (
+        user.role === "COMPANY_USER" &&
+        disclosure.company_id !== user.company_id
+    ) {
+        throw new AppError(
+            "Access denied",
+            403
+        );
+    }
+
+    return await disclosureModel.getDisclosureTimeline(id);
+},
 
 };

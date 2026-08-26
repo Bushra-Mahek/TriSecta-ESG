@@ -97,5 +97,28 @@ export const disclosureModel = {
     );
 
     return result.rows[0] || null;
-}
+},
+
+async getPendingReviews() {
+    const result = await db.query(
+        `SELECT *
+         FROM disclosures
+         WHERE status = 'UNDER_REVIEW'
+         ORDER BY submitted_at ASC`
+    );
+
+    return result.rows;
+},
+
+async getDisclosureTimeline(disclosureId) {
+    const result = await db.query(
+        `SELECT *
+         FROM disclosure_audit_logs
+         WHERE disclosure_id = $1
+         ORDER BY created_at ASC`,
+        [disclosureId]
+    );
+
+    return result.rows;
+},
 };

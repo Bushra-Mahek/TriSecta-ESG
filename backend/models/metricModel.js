@@ -94,5 +94,18 @@ export const metricModel = {
         );
 
         return result.rows[0] || null;
-    }
+    },
+
+    async activateMetric(id, client = db) {
+    const result = await client.query(
+        `UPDATE metrics
+         SET is_active = TRUE,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1
+         RETURNING *`,
+        [id]
+    );
+
+    return result.rows[0] || null;
+},
 };

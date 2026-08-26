@@ -200,5 +200,52 @@ export const metricService = {
 
             return updatedMetric;
         });
+    },
+
+    async activateMetric(id, user, ipAddress) {
+
+    if (user.role !== "ADMIN") {
+        throw new AppError(
+            "Access denied",
+            403
+        );
     }
+
+    const metric =
+        await metricModel.getMetric(id);
+
+    if (!metric) {
+        throw new AppError(
+            "Metric not found",
+            404
+        );
+    }
+
+    if (metric.is_active) {
+        throw new AppError(
+            "Metric is already active",
+            409
+        );
+    }
+
+    return await transaction(async (client) => {
+
+        const updatedMetric =
+            await metricModel.activateMetric(
+                id,
+                client
+            );
+
+        await auditLogModel.createLog(
+            user.id,
+            "UPDATE_METRIC",
+            "METRIC",
+            id,
+            ipAddress,
+            client
+        );
+
+        return updatedMetric;
+    });
+},
 };

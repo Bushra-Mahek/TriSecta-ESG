@@ -2,7 +2,7 @@ import express from "express"
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { authorize } from "../middlewares/roleMiddleware.js";
 import { createDisclosure, viewDisclosure, viewDisclosures, updateDisclosure, deleteDisclosure, reviseDisclosure, submitDisclosure,  verifyDisclosure,
-    rejectDisclosure } from "../controllers/disclosureController.js";
+    rejectDisclosure, getDisclosureReview, getPendingReviews, getDisclosureTimeline} from "../controllers/disclosureController.js";
 
 const router = express.Router();
 
@@ -18,6 +18,25 @@ router.get(
     authenticate,
     authorize("ADMIN", "AUDITOR", "REGULATOR"),
     viewDisclosures
+);
+
+router.get(
+    "/:id/review",
+    authenticate,
+    getDisclosureReview
+);
+
+router.get(
+    "/pending-review",
+    authenticate,
+    authorize("AUDITOR"),
+    getPendingReviews
+);
+
+router.get(
+    "/:id/timeline",
+    authenticate,
+    getDisclosureTimeline
 );
 
 router.get(
@@ -67,6 +86,9 @@ router.post(
     authorize("AUDITOR"),
     rejectDisclosure
 );
+
+
+
 
 export default router;
 

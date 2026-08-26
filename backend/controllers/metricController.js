@@ -91,3 +91,24 @@ export const deactivateMetric = async (req, res, next) => {
         next(err);
     }
 };
+
+export const activateMetric = async (req, res, next) => {
+    try {
+
+        const result =
+            await metricService.activateMetric(
+                req.params.id,
+                req.user,
+                req.ip
+            );
+
+        return res.status(200).json({
+            message: "Metric activated successfully",
+            metric: result
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
+

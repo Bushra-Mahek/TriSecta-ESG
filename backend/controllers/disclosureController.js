@@ -187,3 +187,58 @@ export const rejectDisclosure = async (req, res, next) => {
         next(err);
     }
 };
+
+export const getDisclosureReview = async (req, res, next) => {
+    try {
+
+        const result =
+            await disclosureService.getDisclosureReview(
+                req.params.id,
+                req.user
+            );
+
+        return res.status(200).json({
+            disclosure: result.disclosure,
+            dataPoints: result.dataPoints,
+            documents: result.documents
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const getPendingReviews = async (req, res, next) => {
+    try {
+
+        const result =
+            await disclosureService.getPendingReviews(
+                req.user
+            );
+
+        return res.status(200).json({
+            disclosures: result
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const getDisclosureTimeline = async (req, res, next) => {
+    try {
+
+        const result =
+            await disclosureService.getDisclosureTimeline(
+                req.params.id,
+                req.user
+            );
+
+        return res.status(200).json({
+            timeline: result
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
