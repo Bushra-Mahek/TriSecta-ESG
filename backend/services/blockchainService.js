@@ -1,15 +1,19 @@
 import { ethers } from "ethers";
+
 import {
     contract,
     CONTRACT_ADDRESS
 } from "../config/blockchain.js";
+
 
 export const blockchainService = {
 
     async anchorMerkleRoot(merkleRoot) {
 
         if (!merkleRoot) {
-            throw new Error("Merkle root is required");
+            throw new Error(
+                "Merkle root is required"
+            );
         }
 
         if (!ethers.isHexString(merkleRoot, 32)) {
@@ -18,25 +22,33 @@ export const blockchainService = {
             );
         }
 
-        // Prevent duplicate anchoring
         const alreadyAnchored =
-            await contract.isRootAnchored(merkleRoot);
+            await contract.isRootAnchored(
+                merkleRoot
+            );
 
         if (alreadyAnchored) {
+
             const timestamp =
-                await contract.anchoredRoots(merkleRoot);
+                await contract.anchoredRoots(
+                    merkleRoot
+                );
 
             return {
                 alreadyAnchored: true,
                 merkleRoot,
                 contractAddress: CONTRACT_ADDRESS,
                 transactionHash: null,
+                blockNumber: null,
+                gasUsed: null,
                 timestamp: timestamp.toString()
             };
         }
 
         const transaction =
-            await contract.anchorRoot(merkleRoot);
+            await contract.anchorRoot(
+                merkleRoot
+            );
 
         const receipt =
             await transaction.wait();
@@ -55,7 +67,9 @@ export const blockchainService = {
     async isMerkleRootAnchored(merkleRoot) {
 
         if (!merkleRoot) {
-            throw new Error("Merkle root is required");
+            throw new Error(
+                "Merkle root is required"
+            );
         }
 
         if (!ethers.isHexString(merkleRoot, 32)) {
@@ -71,10 +85,6 @@ export const blockchainService = {
 
 
     async getAnchorTimestamp(merkleRoot) {
-
-        if (!merkleRoot) {
-            throw new Error("Merkle root is required");
-        }
 
         const timestamp =
             await contract.anchoredRoots(

@@ -9,6 +9,12 @@ import { transaction } from "../config/db.js";
 import { disclosureAuditModel } from "../models/disclosureAuditModel.js";
 import { auditLogModel } from "../models/auditLogModel.js";
 
+import { merkleService } from "./merkleService.js";
+import { blockchainService } from "./blockchainService.js";
+
+import { merkleModel } from "../models/merkleModel.js";
+import { blockchainTransactionModel } from "../models/blockchainTransactionModel.js";
+
 export const disclosureService = {
     async createDisclosure(reportingYear, user, ipAddress) {
 
@@ -245,9 +251,26 @@ export const disclosureService = {
     });
 },
 
-async submitDisclosure(id, user) {
+async submitDisclosure(id, user,ipAddress) {
 
-    const disclosure = await disclosureModel.getDisclosure(id);
+    // --------------------------------
+    // 1. Authorization
+    // --------------------------------
+
+    if (user.role !== "COMPANY_USER") {
+        throw new AppError(
+            "Access denied",
+            403
+        );
+    }
+
+
+    // --------------------------------
+    // 2. Fetch disclosure
+    // --------------------------------
+
+    const disclosure =
+        await disclosureModel.getDisclosure(id);
 
     if (!disclosure) {
         throw new AppError(
@@ -256,19 +279,25 @@ async submitDisclosure(id, user) {
         );
     }
 
-    if (user.role !== "COMPANY_USER") {
-    throw new AppError(
-        "Access denied",
-        403
-    );
-}
 
-    if (disclosure.company_id !== user.company_id) {
+    // --------------------------------
+    // 3. Ownership
+    // --------------------------------
+
+    if (
+        disclosure.company_id !==
+        user.company_id
+    ) {
         throw new AppError(
             "Access denied",
             403
         );
     }
+
+
+    // --------------------------------
+    // 4. Validate transition
+    // --------------------------------
 
     if (!canTransition(
         disclosure.status,
@@ -280,26 +309,206 @@ async submitDisclosure(id, user) {
         );
     }
 
-    return await transaction(async (client) => {
 
-        const updatedDisclosure =
-            await disclosureModel.updateStatus(
+    // --------------------------------
+    // 5. Get ESG data
+    // --------------------------------
+
+    const dataPoints =
+        await dataPointModel
+            .getDataPointsByDisclosure(id);
+
+    if (
+        !dataPoints ||
+        dataPoints.length === 0
+    ) {
+        throw new AppError(
+            "Cannot submit disclosure without data points",
+            409
+        );
+    }
+
+
+    // --------------------------------
+    // 6. Convert DB records into
+    //    canonical Merkle records
+    // --------------------------------
+
+    const records =
+        dataPoints.map(dataPoint => ({
+            disclosureId:
+                dataPoint.disclosure_id,
+
+            metricId:
+                dataPoint.metric_id,
+
+            value:
+                dataPoint.value,
+
+            unit:
+                dataPoint.unit,
+
+            periodStart:
+                dataPoint.period_start,
+
+            periodEnd:
+                dataPoint.period_end,
+
+            enteredBy:
+                dataPoint.entered_by
+        }));
+
+
+    // --------------------------------
+    // 7. Build Merkle tree
+    // --------------------------------
+
+    const {
+        leafHashes,
+        root
+    } = merkleService.buildTree(
+        records
+    );
+
+
+    // Solidity bytes32 requires 0x prefix
+    const merkleRoot =
+        `0x${root}`;
+
+
+    // --------------------------------
+    // 8. Prevent duplicate DB anchoring
+    // --------------------------------
+
+    const existingRoot =
+        await merkleModel
+            .getByDisclosureAndRoot(
                 id,
+                root
+            );
+
+    if (existingRoot) {
+
+        throw new AppError(
+            "This disclosure version is already anchored",
+            409
+        );
+    }
+
+
+    // --------------------------------
+    // 9. Anchor on Sepolia
+    // --------------------------------
+
+    const blockchainResult =
+        await blockchainService
+            .anchorMerkleRoot(
+                merkleRoot
+            );
+
+
+    // --------------------------------
+    // 10. Save everything in PostgreSQL
+    // --------------------------------
+
+    return await transaction(
+        async (client) => {
+
+            const anchoredAt =
+                blockchainResult.timestamp
+                    ? new Date(
+                        Number(
+                            blockchainResult.timestamp
+                        ) * 1000
+                    )
+                    : new Date();
+
+
+            const merkleRootRecord =
+                await merkleModel.create(
+                    id,
+                    root,
+                    "SEPOLIA",
+                    blockchainResult.transactionHash,
+                    blockchainResult.blockNumber,
+                    anchoredAt,
+                    client
+                );
+
+
+            if (
+                blockchainResult.transactionHash
+            ) {
+
+                await blockchainTransactionModel
+                    .create(
+                        id,
+                        blockchainResult.transactionHash,
+                        blockchainResult.blockNumber,
+                        blockchainResult.gasUsed,
+                        "CONFIRMED",
+                        client
+                    );
+            }
+
+
+            // --------------------------------
+            // 11. Change disclosure status
+            // --------------------------------
+
+            const updatedDisclosure =
+                await disclosureModel.updateStatus(
+                    id,
+                    "UNDER_REVIEW",
+                    client
+                );
+
+
+            // --------------------------------
+            // 12. Disclosure audit trail
+            // --------------------------------
+
+            await disclosureAuditModel.createLog(
+                id,
+                user.id,
+                "SUBMITTED",
+                disclosure.status,
                 "UNDER_REVIEW",
                 client
             );
 
-        await disclosureAuditModel.createLog(
-            id,
-            user.id,
-            "SUBMITTED",
-            disclosure.status,
-            "UNDER_REVIEW",
-            client
-        );
 
-        return updatedDisclosure;
-    });
+            // --------------------------------
+            // 13. General audit log
+            // --------------------------------
+
+            await auditLogModel.createLog(
+                user.id,
+                "SUBMIT_DISCLOSURE",
+                "DISCLOSURE",
+                id,
+                ipAddress,
+                client
+            );
+
+
+            return {
+                disclosure:
+                    updatedDisclosure,
+
+                merkleRoot:
+                    merkleRoot,
+
+                leafCount:
+                    leafHashes.length,
+
+                blockchain:
+                    blockchainResult,
+
+                merkleRootRecord
+            };
+        }
+    );
 },
 
 

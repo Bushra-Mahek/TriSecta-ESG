@@ -12,8 +12,15 @@ function sha256(value) {
 
 function hashRecord(record) {
 
-    const canonicalRecord =
-        JSON.stringify(record);
+    const canonicalRecord = JSON.stringify({
+        disclosureId: record.disclosureId,
+        metricId: record.metricId,
+        value: record.value,
+        unit: record.unit,
+        periodStart: record.periodStart,
+        periodEnd: record.periodEnd,
+        enteredBy: record.enteredBy
+    });
 
     return sha256(canonicalRecord);
 }
@@ -70,18 +77,14 @@ function getMerkleProof(hashes, index) {
         !Array.isArray(hashes) ||
         hashes.length === 0
     ) {
-        throw new Error(
-            "Hashes are required"
-        );
+        throw new Error("Hashes are required");
     }
 
     if (
         index < 0 ||
         index >= hashes.length
     ) {
-        throw new Error(
-            "Invalid leaf index"
-        );
+        throw new Error("Invalid leaf index");
     }
 
     const proof = [];
@@ -195,9 +198,7 @@ export const merkleService = {
         }
 
         const leafHashes =
-            records.map(
-                hashRecord
-            );
+            records.map(hashRecord);
 
         const root =
             buildMerkleRoot(

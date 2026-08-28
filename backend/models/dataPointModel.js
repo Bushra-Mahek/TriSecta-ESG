@@ -58,12 +58,13 @@ async getDataPointsByDisclosure(disclosureId) {
         `SELECT *
          FROM data_points
          WHERE disclosure_id = $1
-         ORDER BY period_start ASC`,
+         ORDER BY period_start ASC, id ASC`,
         [disclosureId]
     );
 
     return result.rows;
 },
+
 
 async updateDataPoint(
     id,

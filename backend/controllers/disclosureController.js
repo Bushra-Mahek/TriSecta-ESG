@@ -129,9 +129,10 @@ export const submitDisclosure = async (req, res, next) => {
     try {
         const result =
             await disclosureService.submitDisclosure(
-                req.params.id,
-                req.user
-            );
+    req.params.id,
+    req.user,
+    req.ip
+);
 
         return res.status(200).json({
             message: "Disclosure submitted successfully",

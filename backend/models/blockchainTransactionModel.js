@@ -1,54 +1,32 @@
 import { db } from "../config/db.js";
 
-export const merkleModel = {
-
-    async getByDisclosureAndRoot(
-        disclosureId,
-        rootHash
-    ) {
-        const result = await db.query(
-            `SELECT *
-             FROM merkle_roots
-             WHERE disclosure_id = $1
-             AND root_hash = $2`,
-            [
-                disclosureId,
-                rootHash
-            ]
-        );
-
-        return result.rows[0] || null;
-    },
-
+export const blockchainTransactionModel = {
 
     async create(
         disclosureId,
-        rootHash,
-        blockchainNetwork,
         transactionHash,
         blockNumber,
-        anchoredAt,
+        gasUsed,
+        transactionStatus,
         client = db
     ) {
         const result = await client.query(
-            `INSERT INTO merkle_roots
+            `INSERT INTO blockchain_transactions
             (
                 disclosure_id,
-                root_hash,
-                blockchain_network,
                 transaction_hash,
                 block_number,
-                anchored_at
+                gas_used,
+                transaction_status
             )
-            VALUES ($1, $2, $3, $4, $5, $6)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *`,
             [
                 disclosureId,
-                rootHash,
-                blockchainNetwork,
                 transactionHash,
                 blockNumber,
-                anchoredAt
+                gasUsed,
+                transactionStatus
             ]
         );
 
@@ -61,7 +39,7 @@ export const merkleModel = {
     ) {
         const result = await db.query(
             `SELECT *
-             FROM merkle_roots
+             FROM blockchain_transactions
              WHERE disclosure_id = $1
              ORDER BY created_at DESC`,
             [disclosureId]
