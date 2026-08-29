@@ -5,6 +5,8 @@ import disclosureRoutes from "./routes/disclosureRoutes.js";
 import metricRoutes from "./routes/metricRoutes.js";
 import dataPointRoutes from "./routes/dataPointRoutes.js";
 import documentRoutes from "./routes/documentRoutes.js";
+import verificationRoutes
+    from "./routes/verificationRoutes.js";
 
 
 
@@ -32,6 +34,10 @@ app.use("/api/data-points", dataPointRoutes);
 app.use(
     "/api/documents",
     documentRoutes
+);
+app.use(
+    "/api/verifications",
+    verificationRoutes
 );
 app.use(errorHandler);
 

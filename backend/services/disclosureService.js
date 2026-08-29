@@ -673,16 +673,13 @@ async getDisclosureReview(id, user) {
     }
 
     const dataPoints =
-        await dataPointModel
-            .getDataPointsByDisclosure(id);
+        await dataPointModel.getDataPointsByDisclosure(id);
 
     const documents =
-        await documentModel
-            .getDocumentsByDisclosure(id);
+        await documentModel.getDocumentsByDisclosure(id);
 
     const validationResults =
-        await validationResultModel
-            .getResultsByDisclosure(id);
+        await validationResultModel.getResultsByDisclosure(id);
 
     return {
         disclosure,
