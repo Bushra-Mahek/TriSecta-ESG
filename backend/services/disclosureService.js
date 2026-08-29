@@ -14,6 +14,10 @@ import { blockchainService } from "./blockchainService.js";
 
 import { merkleModel } from "../models/merkleModel.js";
 import { blockchainTransactionModel } from "../models/blockchainTransactionModel.js";
+import { validationService }
+    from "./validation/validationService.js";
+    import { validationResultModel }
+    from "../models/validationResultModel.js";
 
 export const disclosureService = {
     async createDisclosure(reportingYear, user, ipAddress) {
@@ -314,19 +318,35 @@ async submitDisclosure(id, user,ipAddress) {
     // 5. Get ESG data
     // --------------------------------
 
-    const dataPoints =
-        await dataPointModel
-            .getDataPointsByDisclosure(id);
+    
+// 5. FULL VALIDATION
+// --------------------------------
 
-    if (
-        !dataPoints ||
-        dataPoints.length === 0
-    ) {
-        throw new AppError(
-            "Cannot submit disclosure without data points",
-            409
-        );
-    }
+const validation =
+    await validationService
+        .validateDisclosure(id);
+
+
+if (!validation.valid) {
+
+    throw new AppError(
+        "Disclosure failed automated validation",
+        409
+    );
+}
+const dataPoints =
+    await dataPointModel
+        .getDataPointsByDisclosure(id);
+
+if (
+    !dataPoints ||
+    dataPoints.length === 0
+) {
+    throw new AppError(
+        "Cannot submit disclosure without data points",
+        409
+    );
+}
 
 
     // --------------------------------
@@ -653,15 +673,22 @@ async getDisclosureReview(id, user) {
     }
 
     const dataPoints =
-        await dataPointModel.getDataPointsByDisclosure(id);
+        await dataPointModel
+            .getDataPointsByDisclosure(id);
 
     const documents =
-        await documentModel.getDocumentsByDisclosure(id);
+        await documentModel
+            .getDocumentsByDisclosure(id);
+
+    const validationResults =
+        await validationResultModel
+            .getResultsByDisclosure(id);
 
     return {
         disclosure,
         dataPoints,
-        documents
+        documents,
+        validationResults
     };
 },
 
