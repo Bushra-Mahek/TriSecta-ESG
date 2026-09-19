@@ -18,6 +18,8 @@ import { validationService }
     from "./validation/validationService.js";
     import { validationResultModel }
     from "../models/validationResultModel.js";
+import { crossVerificationModel }
+    from "../models/crossVerificationModel.js";
 
 export const disclosureService = {
     async createDisclosure(reportingYear, user, ipAddress) {
@@ -313,27 +315,10 @@ async submitDisclosure(id, user,ipAddress) {
         );
     }
 
-
     // --------------------------------
-    // 5. Get ESG data
-    // --------------------------------
-
-    
-// 5. FULL VALIDATION
+// 5. CROSS-SOURCE VERIFICATION GATE
 // --------------------------------
 
-const validation =
-    await validationService
-        .validateDisclosure(id);
-
-
-if (!validation.valid) {
-
-    throw new AppError(
-        "Disclosure failed automated validation",
-        409
-    );
-}
 const dataPoints =
     await dataPointModel
         .getDataPointsByDisclosure(id);
@@ -348,9 +333,59 @@ if (
     );
 }
 
+const crossVerificationResults =
+    await crossVerificationModel
+        .getResultsByDisclosure(id);
+
+if (
+    !crossVerificationResults ||
+    crossVerificationResults.length !== dataPoints.length
+) {
+    throw new AppError(
+        "All data points must pass cross-source verification before submission",
+        409
+    );
+}
+
+const failedCrossVerification =
+    crossVerificationResults.find(
+        result =>
+            result.verification_status !== "VERIFIED"
+    );
+
+if (failedCrossVerification) {
+    throw new AppError(
+        "Disclosure contains data points that failed cross-source verification",
+        409
+    );
+}
+
 
     // --------------------------------
-    // 6. Convert DB records into
+    // 6. Get ESG data
+    // --------------------------------
+
+    
+// 6. FULL VALIDATION
+// --------------------------------
+
+const validation =
+    await validationService
+        .validateDisclosure(id);
+
+
+if (!validation.valid) {
+
+    throw new AppError(
+        "Disclosure failed automated validation",
+        409
+    );
+}
+
+
+
+    // --------------------------------
+    // 7. Convert DB records into
     //    canonical Merkle records
     // --------------------------------
 
@@ -380,7 +415,7 @@ if (
 
 
     // --------------------------------
-    // 7. Build Merkle tree
+    // 8. Build Merkle tree
     // --------------------------------
 
     const {
@@ -397,7 +432,7 @@ if (
 
 
     // --------------------------------
-    // 8. Prevent duplicate DB anchoring
+    // 9. Prevent duplicate DB anchoring
     // --------------------------------
 
     const existingRoot =
@@ -417,7 +452,7 @@ if (
 
 
     // --------------------------------
-    // 9. Anchor on Sepolia
+    // 10. Anchor on Sepolia
     // --------------------------------
 
     const blockchainResult =
@@ -428,7 +463,7 @@ if (
 
 
     // --------------------------------
-    // 10. Save everything in PostgreSQL
+    // 11. Save everything in PostgreSQL
     // --------------------------------
 
     return await transaction(
@@ -473,7 +508,7 @@ if (
 
 
             // --------------------------------
-            // 11. Change disclosure status
+            // 12. Change disclosure status
             // --------------------------------
 
             const updatedDisclosure =
@@ -485,7 +520,7 @@ if (
 
 
             // --------------------------------
-            // 12. Disclosure audit trail
+            // 13. Disclosure audit trail
             // --------------------------------
 
             await disclosureAuditModel.createLog(
@@ -499,7 +534,7 @@ if (
 
 
             // --------------------------------
-            // 13. General audit log
+            // 14. General audit log
             // --------------------------------
 
             await auditLogModel.createLog(
