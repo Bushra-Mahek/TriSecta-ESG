@@ -145,49 +145,6 @@ export const submitDisclosure = async (req, res, next) => {
     }
 };
 
-export const verifyDisclosure = async (req, res, next) => {
-    try {
-
-        const id = req.params.id;
-
-        const result =
-            await disclosureService.verifyDisclosure(
-                id,
-                req.user
-            );
-
-        return res.status(200).json({
-            message: "Disclosure verified successfully",
-            disclosure: result
-        });
-    }
-
-    catch (err) {
-        next(err);
-    }
-};
-
-export const rejectDisclosure = async (req, res, next) => {
-    try {
-
-        const id = req.params.id;
-
-        const result =
-            await disclosureService.rejectDisclosure(
-                id,
-                req.user
-            );
-
-        return res.status(200).json({
-            message: "Disclosure rejected successfully",
-            disclosure: result
-        });
-    }
-
-    catch (err) {
-        next(err);
-    }
-};
 
 export const getDisclosureReview = async (req, res, next) => {
     try {
@@ -201,7 +158,12 @@ export const getDisclosureReview = async (req, res, next) => {
         return res.status(200).json({
             disclosure: result.disclosure,
             dataPoints: result.dataPoints,
-            documents: result.documents
+            documents: result.documents,
+            validationResults: result.validationResults,
+            crossVerificationResults: result.crossVerificationResults,
+            merkleRoots: result.merkleRoots,
+            blockchainTransactions: result.blockchainTransactions
+
         });
 
     } catch (err) {

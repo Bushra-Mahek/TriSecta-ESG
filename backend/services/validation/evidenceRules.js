@@ -12,8 +12,8 @@ export const evidenceRules = {
             return [{
                 ruleCode: "DOCUMENT_EVIDENCE",
                 category: "EVIDENCE",
-                severity: "WARNING",
-                status: "WARNING",
+                severity: "FAIL",
+                status: "FAILED",
                 message:
                     "No supporting evidence is attached to the disclosure.",
                 expected: "Supporting evidence",

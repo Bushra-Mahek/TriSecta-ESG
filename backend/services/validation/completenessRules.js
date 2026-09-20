@@ -36,8 +36,8 @@ export const completenessRules = {
             return [{
                 ruleCode: "SUPPORTING_DOCUMENT_REQUIRED",
                 category: "COMPLETENESS",
-                severity: "WARNING",
-                status: "WARNING",
+                severity: "FAIL",
+                status: "FAILED",
                 message:
                     "No supporting document has been uploaded for this disclosure.",
                 expected: "> 0 supporting documents",

@@ -55,7 +55,9 @@ export const verificationService = {
 
         const failed =
             validationResults.filter(
-                result => result.severity === "FAIL"
+                result => result.severity === "FAIL" ||
+            result.status === "FAILED"
+
             );
 
         if (failed.length > 0) {

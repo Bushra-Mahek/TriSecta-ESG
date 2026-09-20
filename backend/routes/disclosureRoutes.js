@@ -1,8 +1,7 @@
 import express from "express"
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { authorize } from "../middlewares/roleMiddleware.js";
-import { createDisclosure, viewDisclosure, viewDisclosures, updateDisclosure, deleteDisclosure, reviseDisclosure, submitDisclosure,  verifyDisclosure,
-    rejectDisclosure, getDisclosureReview, getPendingReviews, getDisclosureTimeline} from "../controllers/disclosureController.js";
+import { createDisclosure, viewDisclosure, viewDisclosures, updateDisclosure, deleteDisclosure, reviseDisclosure, submitDisclosure, getDisclosureReview, getPendingReviews, getDisclosureTimeline} from "../controllers/disclosureController.js";
 
 const router = express.Router();
 
@@ -73,19 +72,6 @@ router.post(
     submitDisclosure
 );
 
-router.post(
-    "/:id/verify",
-    authenticate,
-    authorize("AUDITOR"),
-    verifyDisclosure
-);
-
-router.post(
-    "/:id/reject",
-    authenticate,
-    authorize("AUDITOR"),
-    rejectDisclosure
-);
 
 
 

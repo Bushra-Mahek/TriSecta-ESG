@@ -568,107 +568,107 @@ if (!validation.valid) {
 
 
 
-async verifyDisclosure(id, user) {
+// async verifyDisclosure(id, user) {
 
-    // 1. Authorization FIRST
-    if (user.role !== "AUDITOR") {
-        throw new AppError(
-            "Access denied",
-            403
-        );
-    }
+//     // 1. Authorization FIRST
+//     if (user.role !== "AUDITOR") {
+//         throw new AppError(
+//             "Access denied",
+//             403
+//         );
+//     }
 
-    // 2. Fetch disclosure
-    const disclosure = await disclosureModel.getDisclosure(id);
+//     // 2. Fetch disclosure
+//     const disclosure = await disclosureModel.getDisclosure(id);
 
-    if (!disclosure) {
-        throw new AppError(
-            "Disclosure not found",
-            404
-        );
-    }
+//     if (!disclosure) {
+//         throw new AppError(
+//             "Disclosure not found",
+//             404
+//         );
+//     }
 
-    // 3. Validate state transition
-    if (!canTransition(disclosure.status, "VERIFIED")) {
-        throw new AppError(
-            "Invalid disclosure status transition",
-            409
-        );
-    }
+//     // 3. Validate state transition
+//     if (!canTransition(disclosure.status, "VERIFIED")) {
+//         throw new AppError(
+//             "Invalid disclosure status transition",
+//             409
+//         );
+//     }
 
-    // 4. Perform status update + audit log atomically
-    return await transaction(async (client) => {
+//     // 4. Perform status update + audit log atomically
+//     return await transaction(async (client) => {
 
-        const updatedDisclosure =
-            await disclosureModel.updateStatus(
-                id,
-                "VERIFIED",
-                client
-            );
+//         const updatedDisclosure =
+//             await disclosureModel.updateStatus(
+//                 id,
+//                 "VERIFIED",
+//                 client
+//             );
 
-        await disclosureAuditModel.createLog(
-            id,
-            user.id,
-            "VERIFIED",
-            disclosure.status,
-            "VERIFIED",
-            client
-        );
+//         await disclosureAuditModel.createLog(
+//             id,
+//             user.id,
+//             "VERIFIED",
+//             disclosure.status,
+//             "VERIFIED",
+//             client
+//         );
 
-        return updatedDisclosure;
-    });
-},
+//         return updatedDisclosure;
+//     });
+// },
 
-async rejectDisclosure(id, user) {
+// async rejectDisclosure(id, user) {
 
-    if (user.role !== "AUDITOR") {
-        throw new AppError(
-            "Access denied",
-            403
-        );
-    }
+//     if (user.role !== "AUDITOR") {
+//         throw new AppError(
+//             "Access denied",
+//             403
+//         );
+//     }
 
-    const disclosure =
-        await disclosureModel.getDisclosure(id);
+//     const disclosure =
+//         await disclosureModel.getDisclosure(id);
 
-    if (!disclosure) {
-        throw new AppError(
-            "Disclosure not found",
-            404
-        );
-    }
+//     if (!disclosure) {
+//         throw new AppError(
+//             "Disclosure not found",
+//             404
+//         );
+//     }
 
-    if (!canTransition(
-        disclosure.status,
-        "REJECTED"
-    )) {
-        throw new AppError(
-            "Invalid disclosure status transition",
-            409
-        );
-    }
+//     if (!canTransition(
+//         disclosure.status,
+//         "REJECTED"
+//     )) {
+//         throw new AppError(
+//             "Invalid disclosure status transition",
+//             409
+//         );
+//     }
 
-    return await transaction(async (client) => {
+//     return await transaction(async (client) => {
 
-        const updatedDisclosure =
-            await disclosureModel.updateStatus(
-                id,
-                "REJECTED",
-                client
-            );
+//         const updatedDisclosure =
+//             await disclosureModel.updateStatus(
+//                 id,
+//                 "REJECTED",
+//                 client
+//             );
 
-        await disclosureAuditModel.createLog(
-            id,
-            user.id,
-            "REJECTED",
-            disclosure.status,
-            "REJECTED",
-            client
-        );
+//         await disclosureAuditModel.createLog(
+//             id,
+//             user.id,
+//             "REJECTED",
+//             disclosure.status,
+//             "REJECTED",
+//             client
+//         );
 
-        return updatedDisclosure;
-    });
-},
+//         return updatedDisclosure;
+//     });
+// },
 
 async getDisclosureReview(id, user) {
 
@@ -715,12 +715,24 @@ async getDisclosureReview(id, user) {
 
     const validationResults =
         await validationResultModel.getResultsByDisclosure(id);
+    
+    const crossVerificationResults =
+        await crossVerificationModel.getResultsByDisclosure(id);
+
+    const merkleRoots =
+        await merkleModel.getByDisclosure(id);
+
+    const blockchainTransactions =
+        await blockchainTransactionModel.getByDisclosure(id);
 
     return {
         disclosure,
         dataPoints,
         documents,
-        validationResults
+        validationResults,
+        crossVerificationResults,
+        merkleRoots,
+        blockchainTransactions
     };
 },
 
