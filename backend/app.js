@@ -7,6 +7,7 @@ import dataPointRoutes from "./routes/dataPointRoutes.js";
 import documentRoutes from "./routes/documentRoutes.js";
 import verificationRoutes
     from "./routes/verificationRoutes.js";
+import certificateRoutes from "./routes/certificateRoutes.js";
 
 
 
@@ -39,6 +40,7 @@ app.use(
     "/api/verifications",
     verificationRoutes
 );
+app.use("/api/certificates", certificateRoutes);
 app.use(errorHandler);
 
 export default app;
