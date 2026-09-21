@@ -8,7 +8,7 @@ import documentRoutes from "./routes/documentRoutes.js";
 import verificationRoutes
     from "./routes/verificationRoutes.js";
 import certificateRoutes from "./routes/certificateRoutes.js";
-
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 
 import { errorHandler } from "./middlewares/errorMiddleware.js";
@@ -41,6 +41,7 @@ app.use(
     verificationRoutes
 );
 app.use("/api/certificates", certificateRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use(errorHandler);
 
 export default app;
